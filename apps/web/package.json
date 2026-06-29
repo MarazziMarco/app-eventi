@@ -10,6 +10,8 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@capacitor/core": "^8.4.1",
+    "@capacitor/geolocation": "^8.2.0",
     "@eventi/config": "workspace:*",
     "@eventi/core": "workspace:*",
     "@eventi/sources": "workspace:*",
