@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
+import { dedupeEvents } from "@eventi/core";
 import {
   normalizeRaEvent,
   ResidentAdvisorSource,
   type RaEvent,
 } from "../src/resident-advisor";
+import { buildMockEvents } from "../src/mock-events";
 
 const sample: RaEvent = {
   id: "1748293",
@@ -73,5 +75,45 @@ describe("ResidentAdvisorSource.isConfigured", () => {
       cityLabel: "Viterbo",
     });
     expect(out).toEqual([]);
+  });
+});
+
+describe("dedup cross-fonte RA + SerpApi", () => {
+  it("stesso evento da RA e SerpApi => 1 Event con due sources", () => {
+    const ra = normalizeRaEvent(
+      {
+        id: "999",
+        title: "Tale Of Us @ Fabrique",
+        startTime: "2026-07-25T23:00:00.000Z",
+        contentUrl: "/events/999",
+        isTicketed: true,
+        artists: [{ name: "Tale Of Us" }],
+        venue: { name: "Fabrique", area: { name: "Milano" } },
+      },
+      "Milano",
+    );
+    const serpapi = {
+      source: "google_events_serpapi",
+      title: "Tale of Us - Fabrique",
+      category: "nightlife" as const,
+      start: "2026-07-25T22:30:00.000Z",
+      venue: { name: "Fabrique" },
+      city: "Milano",
+      url: "https://serp/tale",
+      ticketSources: [{ name: "ticketone", url: "https://t1/tale" }],
+    };
+
+    const merged = dedupeEvents([ra, serpapi]);
+    expect(merged).toHaveLength(1);
+    expect(merged[0]!.sources.sort()).toEqual([
+      "google_events_serpapi",
+      "resident_advisor",
+    ]);
+    expect(merged[0]!.ticketSources.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("le fixture mock includono almeno un evento nightlife club", () => {
+    const nightlife = buildMockEvents().filter((e) => e.category === "nightlife");
+    expect(nightlife.length).toBeGreaterThanOrEqual(2);
   });
 });
