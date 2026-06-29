@@ -105,6 +105,47 @@ Tutto in `config/src/`:
 - `ranking.ts` → `SELECTION`: `SHOW_ALL_THRESHOLD` (sotto = mostra tutto), `TOP_PERCENT`, `MIN_HYPE` (cutoff Roma).
 - `venues.ts` → `KNOWN_VENUES` (capacityTier) e `FAMOUS_VENUES` (allowlist che passa sempre).
 
+## App mobile (Capacitor)
+
+L'app iOS/Android è la stessa UI esportata staticamente che chiama l'API su Vercel
+(approccio B). Il backend e i segreti restano su Vercel; nel bundle dell'app finisce
+solo `NEXT_PUBLIC_API_BASE` (pubblico).
+
+### 1. Deploy backend su Vercel
+```bash
+npx vercel@latest login        # una volta
+npx vercel@latest link --yes   # directory progetto: apps/web
+# env segrete (server-side):
+cd apps/web
+printf '%s' "<SERPAPI_KEY>" | npx vercel@latest env add SERPAPI_KEY production
+printf '%s' "serpapi"       | npx vercel@latest env add EVENT_SOURCE_IT production
+npx vercel@latest --prod --yes
+cd ../..
+```
+Annota l'URL prod (es. `https://app-eventi-xxx.vercel.app`).
+
+### 2. Build statica + sync Capacitor
+```bash
+cd apps/web
+NEXT_PUBLIC_API_BASE="https://<TUO-URL>.vercel.app" pnpm build:cap
+npx cap add ios        # solo la prima volta
+npx cap add android    # solo la prima volta (test rimandato)
+npx cap sync
+```
+
+### 3. iOS sul tuo iPhone (Apple ID gratuito)
+Prerequisiti una tantum:
+```bash
+sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+brew install cocoapods
+```
+Poi in Xcode (`npx cap open ios`): Accounts → aggiungi Apple ID; target App → Signing → Personal Team; collega l'iPhone, Run ▶, e sul telefono "fidati" del certificato (Impostazioni → Generali → VPN e gestione dispositivi).
+
+> Con Apple ID gratuito il certificato dura **7 giorni**: per ri-testare, ricollega e premi Run. Le **push iOS** richiedono Apple Developer Program (99$/anno) — non incluse ora.
+
+### Permesso posizione
+In `apps/web/ios/App/App/Info.plist` aggiungi `NSLocationWhenInUseUsageDescription` con un testo tipo "Serve la tua posizione per mostrarti gli eventi vicino a te." (lo fa lo step di setup iOS).
+
 ## Cuciture per la Fase 2
 
 - **Fonti nuove**: stub pronti `resident-advisor.ts`, `dice.ts` (implementa `fetchEvents`, già in `getEventSources`).
