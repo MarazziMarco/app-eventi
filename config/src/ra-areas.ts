@@ -2,18 +2,18 @@
  * Resident Advisor filtra gli eventi per "area" numerica, non per lat/lng.
  * Qui mappiamo le città che supportiamo sul loro RA areaId.
  *
- * NB: gli areaId vanno confermati contro ra.co in fase di test live (aprire
- * https://ra.co/events/it/<citta> e leggere l'area nelle richieste GraphQL).
- * I valori sotto sono il punto di partenza; correggili se la query torna vuota.
+ * areaId verificati live contro ra.co/graphql (2026-06-29) sondando gli id e
+ * leggendo il nome area restituito. Se RA rinumera, riconferma con uno script
+ * che interroga eventListings per id e stampa venue.area.name.
  */
 
 export const RA_AREAS: Record<string, number> = {
-  roma: 20,
-  milano: 13,
-  bologna: 18,
-  napoli: 24,
-  torino: 23,
-  firenze: 19,
+  roma: 52,
+  milano: 171,
+  napoli: 406,
+  torino: 348,
+  bologna: 350,
+  firenze: 352,
 };
 
 function normalizeCity(name: string): string {
