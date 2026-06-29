@@ -1,0 +1,48 @@
+/* Font gratis: Clash Display + Satoshi (Fontshare), Space Mono (Google) */
+@import url("https://api.fontshare.com/v2/css?f[]=clash-display@600,700&f[]=satoshi@400,500,700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --ink: #0e0e13; /* base, blu-carbone molto scuro, non nero puro */
+  --surface: #17171f; /* card */
+  --surface-2: #20202b; /* hover/elevated */
+  --text: #f2f0ea; /* off-white caldo */
+  --text-muted: #8a8896;
+  /* rampa HEAT, mappata su hypeScore 0 -> 100 */
+  --heat-0: #5b6cff; /* indaco — freddo / minore */
+  --heat-50: #b14cff; /* viola */
+  --heat-75: #ff3d7f; /* rosa caldo */
+  --heat-100: #ff8a3d; /* ambra — rovente / evento bomba */
+}
+
+@layer base {
+  html {
+    background: var(--ink);
+  }
+  body {
+    background: var(--ink);
+    color: var(--text);
+    font-family: "Satoshi", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  /* accessibilita': focus da tastiera sempre visibile */
+  :focus-visible {
+    outline: 2px solid var(--heat-75);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+}
+
+/* rispetta chi preferisce meno animazioni */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
