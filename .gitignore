@@ -14,3 +14,6 @@ out/
 
 # os
 .DS_Store
+
+# capacitor build stash (temporary during static export; never commit)
+.api-stash

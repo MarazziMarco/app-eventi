@@ -6,6 +6,7 @@ export default tseslint.config(
     ignores: [
       "**/dist/**",
       "**/.next/**",
+      "**/out/**",
       "**/node_modules/**",
       "**/*.tsbuildinfo",
       "**/next-env.d.ts",
@@ -20,6 +21,15 @@ export default tseslint.config(
         "error",
         { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
       ],
+    },
+  },
+  // Node.js config files and build scripts need process/node globals
+  {
+    files: ["**/next.config.mjs", "**/scripts/**/*.mjs"],
+    languageOptions: {
+      globals: {
+        process: "readonly",
+      },
     },
   },
 );
