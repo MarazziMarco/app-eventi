@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 /**
@@ -8,7 +9,11 @@ import { join } from "node:path";
  * Fase 2: rimpiazzabile con Supabase/Redis dietro la stessa firma.
  */
 
-const CACHE_DIR = process.env.CACHE_DIR ?? join(process.cwd(), ".cache");
+// Su serverless (Vercel) il cwd e' read-only: usa /tmp (scrivibile, persiste
+// per istanza calda). In locale usa ./.cache (ispezionabile). Override: CACHE_DIR.
+const CACHE_DIR =
+  process.env.CACHE_DIR ??
+  (process.env.VERCEL ? join(tmpdir(), "eventi-cache") : join(process.cwd(), ".cache"));
 
 function defaultTtl(): number {
   const env = process.env.CACHE_TTL_SECONDS;
@@ -36,9 +41,15 @@ async function read<T>(key: string): Promise<T | undefined> {
 }
 
 async function write<T>(key: string, data: T, ttl: number): Promise<void> {
-  await mkdir(CACHE_DIR, { recursive: true });
-  const entry: Entry<T> = { ts: Date.now(), ttl, data };
-  await writeFile(fileFor(key), JSON.stringify(entry), "utf8");
+  // Best-effort: su filesystem read-only (es. serverless Vercel) la scrittura
+  // fallisce; la cache e' un'ottimizzazione, non deve MAI far fallire la fonte.
+  try {
+    await mkdir(CACHE_DIR, { recursive: true });
+    const entry: Entry<T> = { ts: Date.now(), ttl, data };
+    await writeFile(fileFor(key), JSON.stringify(entry), "utf8");
+  } catch {
+    // ignora: niente cache su disco questa volta
+  }
 }
 
 /**
