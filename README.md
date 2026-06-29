@@ -11,6 +11,8 @@ Gira **senza spendere** e senza carta:
 
 - **Ticketmaster Discovery** (~5000 call/giorno) + **Spotify Web API** (segnale ranking) = base gratis ufficiale.
 - Copertura italiana via **scraper Playwright self-hosted** (default, gratis e illimitato) _oppure_ **SerpApi** (opzionale, free ~100–250 ricerche/mese → cache 1×/giorno).
+
+> ⚠️ **Realtà dello scraper (testato live 2026-06):** Google blocca i browser headless sul pannello eventi con il wall _"Il browser, il dispositivo e/o la località non sono ancora supportati"_. Lo scraper gestisce consent-wall e blocco e **fallisce pulito** (ritorna 0, le altre fonti continuano), ma in headless **non porta dati**. Per copertura IT affidabile a costo quasi-zero usa **`EVENT_SOURCE_IT=serpapi`**. Lo scraper resta utile solo headed/con browser reale (Fase 2).
 - Nessuna fonte a pagamento. PredictHQ resta stub opzionale.
 
 Tutte le chiavi sono **opzionali**: chiave assente → adapter disattivato, nessun crash.

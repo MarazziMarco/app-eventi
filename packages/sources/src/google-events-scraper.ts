@@ -94,14 +94,18 @@ async function scrapeGoogleEvents(city: string, lang: string): Promise<ScrapedEv
       timeout: 20_000,
     });
 
-    // accetta consenso cookie se presente (best-effort, non bloccante)
-    await page
-      .getByRole("button", { name: /accetta|accept|acconsenti|agree/i })
-      .first()
-      .click({ timeout: 3000 })
-      .catch(() => {});
+    // consent wall (consent.google.com): clicca "Accetta tutto" e attendi il
+    // redirect alla pagina risultati tramite il parametro `continue`.
+    if (page.url().includes("consent.google.com")) {
+      await page
+        .getByRole("button", { name: /accetta tutto|accetta|accept all/i })
+        .first()
+        .click({ timeout: 4000 })
+        .catch(() => {});
+      await page.waitForLoadState("networkidle", { timeout: 15_000 }).catch(() => {});
+    }
 
-    // se Google mostra una pagina di blocco/CAPTCHA, esci pulito
+    // se Google mostra blocco/CAPTCHA, esci pulito
     const blocked = await page
       .locator("form#captcha-form, div#recaptcha")
       .first()
@@ -109,6 +113,18 @@ async function scrapeGoogleEvents(city: string, lang: string): Promise<ScrapedEv
       .catch(() => false);
     if (blocked) {
       console.warn("[scraper] blocco/CAPTCHA rilevato: salto la fonte.");
+      return [];
+    }
+
+    // Google blocca i browser headless sul pannello eventi con un wall tipo
+    // "Il browser, il dispositivo e/o la localita' non sono ancora supportati".
+    // In quel caso il pannello non carica: usciamo puliti (usa SerpApi).
+    const bodyText = (await page.locator("body").innerText().catch(() => "")) || "";
+    if (/non sono ancora supportati|aren't supported yet|not supported yet/i.test(bodyText)) {
+      console.warn(
+        "[scraper] Google ha bloccato il browser headless (pannello eventi non supportato). " +
+          "Per copertura IT affidabile usa EVENT_SOURCE_IT=serpapi.",
+      );
       return [];
     }
 
