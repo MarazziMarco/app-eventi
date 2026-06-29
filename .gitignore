@@ -1,0 +1,16 @@
+node_modules/
+.pnpm-store/
+dist/
+.next/
+out/
+*.tsbuildinfo
+
+# local cache of source API responses (free-tier friendly)
+.cache/
+
+# secrets
+.env
+.env.local
+
+# os
+.DS_Store

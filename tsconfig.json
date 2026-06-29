@@ -1,0 +1,9 @@
+{
+  "files": [],
+  "references": [
+    { "path": "./config" },
+    { "path": "./packages/core" },
+    { "path": "./packages/sources" },
+    { "path": "./apps/web" }
+  ]
+}
