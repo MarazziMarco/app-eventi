@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { normalizeRaEvent, type RaEvent } from "../src/resident-advisor";
+import {
+  normalizeRaEvent,
+  ResidentAdvisorSource,
+  type RaEvent,
+} from "../src/resident-advisor";
 
 const sample: RaEvent = {
   id: "1748293",
@@ -43,5 +47,31 @@ describe("normalizeRaEvent", () => {
       "Milano",
     );
     expect(ev.start).toBe("2026-07-18T22:00:00.000Z");
+  });
+});
+
+describe("ResidentAdvisorSource.isConfigured", () => {
+  it("attivo di default", () => {
+    delete process.env.RA_ENABLED;
+    expect(new ResidentAdvisorSource().isConfigured()).toBe(true);
+  });
+
+  it("disattivabile con RA_ENABLED=0", () => {
+    process.env.RA_ENABLED = "0";
+    expect(new ResidentAdvisorSource().isConfigured()).toBe(false);
+    delete process.env.RA_ENABLED;
+  });
+
+  it("città senza area RA => nessun fetch, ritorna []", async () => {
+    const src = new ResidentAdvisorSource();
+    const out = await src.fetchEvents({
+      lat: 42.42,
+      lng: 12.1,
+      radiusKm: 30,
+      from: "2026-07-01",
+      to: "2026-08-30",
+      cityLabel: "Viterbo",
+    });
+    expect(out).toEqual([]);
   });
 });
