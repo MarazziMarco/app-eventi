@@ -1,34 +1,40 @@
 import type { EventSource } from "@eventi/core";
 import { GoogleEventsScraperSource } from "./google-events-scraper";
 import { GoogleEventsSerpApiSource } from "./google-events-serpapi";
+import { ResidentAdvisorSource } from "./resident-advisor";
 import { DiceSource } from "./stubs/dice";
-import { ResidentAdvisorSource } from "./stubs/resident-advisor";
 import { TicketmasterSource } from "./ticketmaster";
 
-/** Quale adapter usare per la copertura italiana. Default: scraper (costo 0). */
+/** Override opzionale per forzare UNA sola fonte IT (debug). */
 export type ItSourceMode = "serpapi" | "scraper";
 
-export function itSourceMode(): ItSourceMode {
-  return process.env.EVENT_SOURCE_IT === "serpapi" ? "serpapi" : "scraper";
+export function itSourceOverride(): ItSourceMode | undefined {
+  const v = process.env.EVENT_SOURCE_IT;
+  return v === "serpapi" || v === "scraper" ? v : undefined;
 }
 
 /**
- * Costruisce la lista di fonti attive in ordine di priorita' (free-first):
- *   1. Ticketmaster (se TICKETMASTER_KEY)
- *   2. copertura IT: scraper (default) o serpapi (se EVENT_SOURCE_IT=serpapi)
- *   3. stub Fase 2 (RA/DICE) inclusi ma disattivati (isConfigured=false)
+ * Tutte le fonti configurate girano INSIEME (il dedup le fonde):
+ *   - Ticketmaster (se TICKETMASTER_KEY)
+ *   - copertura IT: SerpApi (se key) + scraper, oppure solo quella forzata
+ *     da EVENT_SOURCE_IT
+ *   - Resident Advisor (nightlife; off con RA_ENABLED=0)
+ *   - stub Fase 2 (DICE) inclusi ma disattivati
  *
- * Filtra fuori cio' che non e' configurato: il sistema gira anche con UNA fonte.
+ * Filtra fuori cio' che non e' configurato: gira anche con UNA sola fonte.
  */
 export function getEventSources(): EventSource[] {
-  const it: EventSource =
-    itSourceMode() === "serpapi"
-      ? new GoogleEventsSerpApiSource()
-      : new GoogleEventsScraperSource();
+  const override = itSourceOverride();
+  const itSources: EventSource[] =
+    override === "serpapi"
+      ? [new GoogleEventsSerpApiSource()]
+      : override === "scraper"
+        ? [new GoogleEventsScraperSource()]
+        : [new GoogleEventsSerpApiSource(), new GoogleEventsScraperSource()];
 
   const all: EventSource[] = [
     new TicketmasterSource(),
-    it,
+    ...itSources,
     new ResidentAdvisorSource(),
     new DiceSource(),
   ];

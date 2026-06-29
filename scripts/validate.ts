@@ -10,7 +10,7 @@
  * semplicemente disattivate, lo script gira comunque).
  */
 import { runPipeline, type PipelineResult } from "@eventi/sources";
-import { itSourceMode } from "@eventi/sources";
+import { itSourceOverride } from "@eventi/sources";
 
 // carica .env se presente (Node >=20.12). Chiavi tutte opzionali.
 try {
@@ -61,7 +61,9 @@ function printResult(preset: Preset, r: PipelineResult): void {
 
 async function main(): Promise<void> {
   const { from, to } = defaultWindow();
-  console.log(`Finestra: ${from} → ${to}  |  raggio 30km  |  fonte IT: ${itSourceMode()}`);
+  console.log(
+    `Finestra: ${from} → ${to}  |  raggio 30km  |  fonte IT: ${itSourceOverride() ?? "tutte"}`,
+  );
 
   for (const p of PRESETS) {
     const r = await runPipeline({
