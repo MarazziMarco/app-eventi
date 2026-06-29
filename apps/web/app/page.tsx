@@ -5,6 +5,8 @@ import { useCallback, useEffect, useState } from "react";
 import { EventCard } from "@/components/EventCard";
 import { Hero } from "@/components/Hero";
 import { FeedSkeleton } from "@/components/Skeleton";
+import { eventsUrl } from "@/lib/api";
+import { getCurrentPosition } from "@/lib/geo";
 
 type Meta = {
   rawCount: number;
@@ -33,9 +35,7 @@ export default function Home(): React.ReactElement {
     setLoading(true);
     setError(null);
     try {
-      const params = new URLSearchParams({ lat: String(l.lat), lng: String(l.lng) });
-      if (l.city) params.set("city", l.city);
-      const res = await fetch(`/api/events?${params.toString()}`);
+      const res = await fetch(eventsUrl({ lat: l.lat, lng: l.lng, ...(l.city ? { city: l.city } : {}) }));
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       setData((await res.json()) as ApiResponse);
     } catch (e) {
@@ -50,16 +50,13 @@ export default function Home(): React.ReactElement {
     void load(loc);
   }, [loc, load]);
 
-  const useMyLocation = (): void => {
-    if (!navigator.geolocation) {
-      setError("Geolocalizzazione non disponibile su questo dispositivo.");
-      return;
+  const useMyLocation = async (): Promise<void> => {
+    try {
+      const { lat, lng } = await getCurrentPosition();
+      setLoc({ lat, lng, label: "La mia posizione" });
+    } catch (e) {
+      setError((e as Error).message);
     }
-    navigator.geolocation.getCurrentPosition(
-      (pos) =>
-        setLoc({ lat: pos.coords.latitude, lng: pos.coords.longitude, label: "La mia posizione" }),
-      () => setError("Permesso posizione negato."),
-    );
   };
 
   const events = data?.events ?? [];
@@ -100,7 +97,7 @@ export default function Home(): React.ReactElement {
         </button>
         <button
           className="rounded-full border border-white/10 bg-surface px-4 py-2 text-sm hover:bg-surface-2"
-          onClick={useMyLocation}
+          onClick={() => void useMyLocation()}
         >
           Usa la mia posizione
         </button>
