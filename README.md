@@ -10,7 +10,8 @@ tutto. NON e' ancora l'app nativa (niente Capacitor/push/Supabase: solo cuciture
 Gira **senza spendere** e senza carta:
 
 - **Ticketmaster Discovery** (~5000 call/giorno) + **Spotify Web API** (segnale ranking) = base gratis ufficiale.
-- Copertura italiana via **scraper Playwright self-hosted** (default, gratis e illimitato) _oppure_ **SerpApi** (opzionale, free ~100–250 ricerche/mese → cache 1×/giorno).
+- Copertura italiana: **girano insieme tutte le fonti configurate** (il dedup le fonde). SerpApi (free ~100–250 ricerche/mese → cache 1×/giorno) + scraper Playwright. `EVENT_SOURCE_IT` forza una sola fonte IT (debug).
+- **Resident Advisor** (nightlife club/elettronica): gratis, nessuna chiave, attivo di default. Copre i club di tendenza nelle grandi città; non le discoteche commerciali solo-social.
 
 > ⚠️ **Realtà dello scraper (testato live 2026-06):** Google blocca i browser headless sul pannello eventi con il wall _"Il browser, il dispositivo e/o la località non sono ancora supportati"_. Lo scraper gestisce consent-wall e blocco e **fallisce pulito** (ritorna 0, le altre fonti continuano), ma in headless **non porta dati**. Per copertura IT affidabile a costo quasi-zero usa **`EVENT_SOURCE_IT=serpapi`**. Lo scraper resta utile solo headed/con browser reale (Fase 2).
 - Nessuna fonte a pagamento. PredictHQ resta stub opzionale.
@@ -52,8 +53,9 @@ npx playwright install chromium
 |-----|--------------|
 | `TICKETMASTER_KEY` | fonte base gratis (tour/grandi eventi) |
 | `SPOTIFY_CLIENT_ID` / `SPOTIFY_CLIENT_SECRET` | popolarita' artista (ranking) |
-| `EVENT_SOURCE_IT` | `scraper` (default) o `serpapi` |
-| `SERPAPI_KEY` | solo se `EVENT_SOURCE_IT=serpapi` |
+| `EVENT_SOURCE_IT` | override opzionale; default = tutte le fonti IT insieme (`scraper`/`serpapi` forza una sola) |
+| `SERPAPI_KEY` | abilita SerpApi (copertura IT) |
+| `RA_ENABLED` | Resident Advisor attivo di default; `0` per spegnerlo |
 | `PREDICTHQ_TOKEN` | Fase 2, override score |
 | `CACHE_TTL_SECONDS` | TTL cache default (6h); la fonte IT usa 24h |
 
