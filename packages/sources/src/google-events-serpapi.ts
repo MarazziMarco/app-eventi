@@ -38,11 +38,13 @@ export class GoogleEventsSerpApiSource implements EventSource {
   async fetchEvents(q: GeoQuery): Promise<RawEvent[]> {
     if (!this.isConfigured()) return [];
     const city = q.cityLabel ?? `${q.lat},${q.lng}`;
+    // NB: NON passare hl/gl. Verificato live (2026-06): con hl=it (e/o gl=it)
+    // Google Events ritorna 0 risultati ("hasn't returned any results").
+    // Senza, la query italiana "Eventi a <citta>" geolocalizza da sola e
+    // ritorna eventi reali della citta'.
     const params = new URLSearchParams({
       engine: "google_events",
       q: `Eventi a ${city}`,
-      hl: q.lang ?? "it",
-      gl: q.country ?? "it",
       api_key: process.env.SERPAPI_KEY!,
     });
     const url = `${BASE}?${params.toString()}`;
