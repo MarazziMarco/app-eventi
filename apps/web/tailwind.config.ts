@@ -20,9 +20,9 @@ const config: Config = {
         "heat-100": "var(--heat-100)",
       },
       fontFamily: {
-        display: ["'Clash Display'", "system-ui", "sans-serif"],
-        sans: ["'Satoshi'", "system-ui", "sans-serif"],
-        mono: ["'Space Mono'", "ui-monospace", "monospace"],
+        display: ["var(--font-sans)", "system-ui", "sans-serif"],
+        sans: ["var(--font-sans)", "system-ui", "sans-serif"],
+        mono: ["var(--font-mono)", "ui-monospace", "monospace"],
       },
       keyframes: {
         "heat-pulse": {

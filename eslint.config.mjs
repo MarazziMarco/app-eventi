@@ -7,6 +7,8 @@ export default tseslint.config(
       "**/dist/**",
       "**/.next/**",
       "**/out/**",
+      "**/ios/**",
+      "**/android/**",
       "**/node_modules/**",
       "**/*.tsbuildinfo",
       "**/next-env.d.ts",

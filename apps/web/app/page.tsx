@@ -4,6 +4,7 @@ import type { Event } from "@eventi/core";
 import { useCallback, useEffect, useState } from "react";
 import { EventCard } from "@/components/EventCard";
 import { Hero } from "@/components/Hero";
+import { Logo } from "@/components/Logo";
 import { FeedSkeleton } from "@/components/Skeleton";
 import { eventsUrl } from "@/lib/api";
 import { getCurrentPosition } from "@/lib/geo";
@@ -72,73 +73,76 @@ export default function Home(): React.ReactElement {
     }`;
 
   return (
-    <main className="mx-auto max-w-3xl px-4 pb-20 pt-5">
-      <header className="mb-4">
-        <h1 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">
-          Eventi migliori vicino a me
-        </h1>
-        <p className="mt-1 text-sm text-muted">
-          L&apos;hype è una temperatura. Zone piene → solo il top, zone vuote → tutto.
-        </p>
+    <main
+      className="mx-auto max-w-3xl"
+      style={{ paddingBottom: "max(env(safe-area-inset-bottom), 1.5rem)" }}
+    >
+      {/* app bar: riempie sotto la Dynamic Island, contenuto spinto giu' */}
+      <header
+        className="sticky top-0 z-20 border-b border-white/5 bg-ink/95 px-4 pb-3 backdrop-blur-md"
+        style={{ paddingTop: "max(env(safe-area-inset-top), 0.75rem)" }}
+      >
+        <div className="flex items-center gap-2">
+          <Logo size={26} />
+          <span className="font-display text-lg font-bold tracking-tight">Eventi</span>
+          <span className="ml-auto font-mono text-[11px] text-muted">{loc.label}</span>
+        </div>
+
+        <div className="mt-3 flex flex-wrap gap-2">
+          <button
+            className={tabBtn(loc.label === PRESETS.viterbo.label)}
+            onClick={() => setLoc({ ...PRESETS.viterbo })}
+          >
+            Viterbo
+          </button>
+          <button
+            className={tabBtn(loc.label === PRESETS.roma.label)}
+            onClick={() => setLoc({ ...PRESETS.roma })}
+          >
+            Roma
+          </button>
+          <button
+            className="rounded-full border border-white/10 bg-surface px-4 py-2 text-sm hover:bg-surface-2"
+            onClick={() => void useMyLocation()}
+          >
+            Usa la mia posizione
+          </button>
+        </div>
       </header>
 
-      <div className="sticky top-0 z-10 -mx-4 flex flex-wrap gap-2 bg-ink/90 px-4 py-3 backdrop-blur">
-        <button
-          className={tabBtn(loc.label === PRESETS.viterbo.label)}
-          onClick={() => setLoc({ ...PRESETS.viterbo })}
-        >
-          Viterbo
-        </button>
-        <button
-          className={tabBtn(loc.label === PRESETS.roma.label)}
-          onClick={() => setLoc({ ...PRESETS.roma })}
-        >
-          Roma
-        </button>
-        <button
-          className="rounded-full border border-white/10 bg-surface px-4 py-2 text-sm hover:bg-surface-2"
-          onClick={() => void useMyLocation()}
-        >
-          Usa la mia posizione
-        </button>
+      <div className="px-4 pt-4">
+        {error && (
+          <div className="mb-4 rounded-xl border border-white/10 bg-surface p-4 text-sm text-muted">
+            Qualcosa non ha risposto: {error}. Mostriamo quello che abbiamo.
+          </div>
+        )}
+
+        {loading ? (
+          <FeedSkeleton />
+        ) : events.length === 0 ? (
+          <p className="py-16 text-center text-muted">Nessun evento in zona per ora.</p>
+        ) : (
+          <div className="space-y-6">
+            {hero && <Hero event={hero} />}
+
+            <section>
+              <div className="flex items-baseline justify-between">
+                <span className="font-mono text-[11px] uppercase tracking-widest text-muted">
+                  {eyebrow}
+                </span>
+                <span className="font-mono text-[10px] text-muted/60">
+                  {data?.meta.finalCount ?? 0} eventi
+                </span>
+              </div>
+              <div className="mt-3 space-y-3">
+                {rest.map((e, i) => (
+                  <EventCard key={e.id} event={e} index={i} />
+                ))}
+              </div>
+            </section>
+          </div>
+        )}
       </div>
-
-      {data && (
-        <p className="mb-4 mt-3 font-mono text-[11px] text-muted">
-          {loc.label} · grezzi {data.meta.rawCount} → dedup {data.meta.dedupedCount} → mostrati{" "}
-          {data.meta.finalCount} · {data.meta.sources.join(", ") || "—"}
-          {data.meta.usedMock ? " · dati demo (nessuna chiave)" : ""}
-        </p>
-      )}
-
-      {error && (
-        <div className="mb-4 rounded-xl border border-white/10 bg-surface p-4 text-sm text-muted">
-          Qualcosa non ha risposto: {error}. Mostriamo quello che abbiamo.
-        </div>
-      )}
-
-      {loading ? (
-        <FeedSkeleton />
-      ) : events.length === 0 ? (
-        <p className="py-16 text-center text-muted">
-          Nessun evento in zona per ora.
-        </p>
-      ) : (
-        <div className="space-y-6">
-          {hero && <Hero event={hero} />}
-
-          <section>
-            <span className="font-mono text-[11px] uppercase tracking-widest text-muted">
-              {eyebrow}
-            </span>
-            <div className="mt-3 space-y-3">
-              {rest.map((e, i) => (
-                <EventCard key={e.id} event={e} index={i} />
-              ))}
-            </div>
-          </section>
-        </div>
-      )}
     </main>
   );
 }
