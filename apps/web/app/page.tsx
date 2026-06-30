@@ -129,24 +129,26 @@ export default function Home(): React.ReactElement {
           </button>
         </div>
 
-        <div className="mt-2 flex items-center gap-2">
-          <span className="font-mono text-[10px] uppercase tracking-widest text-muted/70">
-            raggio
-          </span>
-          {[30, 50, 100].map((r) => (
-            <button
-              key={r}
-              onClick={() => setRadiusKm(r)}
-              className={`rounded-full border px-3 py-1 font-mono text-xs transition-colors ${
-                radiusKm === r
-                  ? "border-heat-75 text-heat-75"
-                  : "border-white/10 text-muted hover:text-text"
-              }`}
-            >
-              {r}km
-            </button>
-          ))}
-        </div>
+        {loc.label === "La mia posizione" && (
+          <div className="mt-2 flex items-center gap-2">
+            <span className="font-mono text-[10px] uppercase tracking-widest text-muted/70">
+              raggio
+            </span>
+            {[30, 50, 100].map((r) => (
+              <button
+                key={r}
+                onClick={() => setRadiusKm(r)}
+                className={`rounded-full border px-3 py-1 font-mono text-xs transition-colors ${
+                  radiusKm === r
+                    ? "border-heat-75 text-heat-75"
+                    : "border-white/10 text-muted hover:text-text"
+                }`}
+              >
+                {r}km
+              </button>
+            ))}
+          </div>
+        )}
       </header>
 
       <div className="px-4 pt-4">
