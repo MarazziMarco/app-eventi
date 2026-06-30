@@ -1,5 +1,5 @@
 import type { Event } from "@eventi/core";
-import { categoryLabel, fmtDate } from "@/lib/format";
+import { categoryLabel, cleanCity, fmtDate } from "@/lib/format";
 import { heatColorAlpha } from "@/lib/heat";
 import { HeatReadout } from "./HeatReadout";
 
@@ -45,7 +45,7 @@ export function Hero({ event }: { event: Event }): React.ReactElement {
             {event.title}
           </h2>
           <p className="mt-1 font-mono text-xs text-muted sm:text-sm">
-            {event.venue.name ?? event.city ?? ""} · {fmtDate(event.start)}
+            {[event.venue.name, cleanCity(event.city)].filter(Boolean).join(" · ")} · {fmtDate(event.start)}
           </p>
         </div>
         <HeatReadout score={event.hypeScore} size="lg" pulse />

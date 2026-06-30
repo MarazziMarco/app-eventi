@@ -1,5 +1,5 @@
 import type { Event } from "@eventi/core";
-import { categoryLabel, fmtDate } from "@/lib/format";
+import { categoryLabel, cleanCity, fmtDate } from "@/lib/format";
 import { heatColorAlpha } from "@/lib/heat";
 import { HeatReadout } from "./HeatReadout";
 
@@ -36,8 +36,9 @@ export function EventCard({ event, index }: { event: Event; index: number }): Re
           <HeatReadout score={event.hypeScore} />
         </div>
         <p className="font-mono text-xs text-muted">
-          {event.venue.name ?? event.city ?? "Luogo n/d"} · {fmtDate(event.start)}
+          {[event.venue.name, cleanCity(event.city)].filter(Boolean).join(" · ") || "Luogo n/d"}
         </p>
+        <p className="font-mono text-[11px] text-muted/70">{fmtDate(event.start)}</p>
         <div className="mt-1 flex flex-wrap items-center gap-2">
           <span className="rounded-full border border-white/10 px-2 py-0.5 text-[11px] text-muted">
             {categoryLabel(event.category)}
