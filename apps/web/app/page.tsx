@@ -51,6 +51,18 @@ export default function Home(): React.ReactElement {
     void load(loc);
   }, [loc, load]);
 
+  // all'apertura: chiedi e usa la posizione reale; se negata resta sul preset.
+  useEffect(() => {
+    void (async () => {
+      try {
+        const { lat, lng } = await getCurrentPosition();
+        setLoc({ lat, lng, label: "La mia posizione" });
+      } catch {
+        /* permesso negato o non disponibile: resta sul default */
+      }
+    })();
+  }, []);
+
   const useMyLocation = async (): Promise<void> => {
     try {
       const { lat, lng } = await getCurrentPosition();
