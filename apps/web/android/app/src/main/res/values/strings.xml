@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Eventi</string>
+    <string name="title_activity_main">Eventi</string>
+    <string name="package_name">com.marazzi.eventi</string>
+    <string name="custom_url_scheme">com.marazzi.eventi</string>
+</resources>
