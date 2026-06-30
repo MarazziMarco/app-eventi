@@ -27,7 +27,7 @@ export default tseslint.config(
   },
   // Node.js config files and build scripts need process/node globals
   {
-    files: ["**/next.config.mjs", "**/scripts/**/*.mjs"],
+    files: ["**/next.config.mjs", "**/scripts/**/*.mjs", "**/capacitor.config.ts"],
     languageOptions: {
       globals: {
         process: "readonly",
