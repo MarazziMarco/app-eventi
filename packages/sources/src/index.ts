@@ -6,6 +6,7 @@ export * from "./google-events-serpapi";
 export * from "./google-events-scraper";
 export * from "./resident-advisor";
 export * from "./registry";
+export * from "./geocode";
 export * from "./mock-events";
 export * from "./pipeline";
 export * from "./stubs/dice";

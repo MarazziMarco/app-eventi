@@ -9,6 +9,7 @@ import {
   type GeoQuery,
   type RawEvent,
 } from "@eventi/core";
+import { reverseGeocodeCity } from "./geocode";
 import { MockSource } from "./mock-events";
 import { getEventSources } from "./registry";
 import { enrichWithSpotify } from "./spotify";
@@ -35,6 +36,14 @@ export type PipelineResult = {
  *   -> enrich Spotify -> enrich PredictHQ (stub) -> hypeScore -> filtro adattivo
  */
 export async function runPipeline(query: GeoQuery): Promise<PipelineResult> {
+  // 0. se manca la citta' (es. "usa la mia posizione"), reverse-geocode da
+  // lat/lng: SerpApi/RA cercano per citta', non per coordinate.
+  let q = query;
+  if (!q.cityLabel) {
+    const city = await reverseGeocodeCity(q.lat, q.lng);
+    if (city) q = { ...q, cityLabel: city };
+  }
+
   const sources = getEventSources();
   const failed: string[] = [];
 
@@ -42,7 +51,7 @@ export async function runPipeline(query: GeoQuery): Promise<PipelineResult> {
   const results = await Promise.all(
     sources.map(async (s) => {
       try {
-        return await s.fetchEvents(query);
+        return await s.fetchEvents(q);
       } catch (err) {
         failed.push(s.id);
         console.warn(`[pipeline] fonte ${s.id} fallita: ${(err as Error).message}`);
@@ -58,14 +67,14 @@ export async function runPipeline(query: GeoQuery): Promise<PipelineResult> {
   const forceMock = process.env.EVENT_SOURCE_MOCK === "1";
   const usedMock = forceMock || raws.length === 0;
   if (usedMock) {
-    raws = await new MockSource().fetchEvents(query);
+    raws = await new MockSource().fetchEvents(q);
   }
 
   // 2. filtro raggio + finestra temporale (eventi senza coord vengono tenuti)
   const inScope = raws.filter(
     (r) =>
-      withinRadius({ lat: query.lat, lng: query.lng }, r.venue, query.radiusKm) &&
-      withinWindow(r.start, query.from, query.to),
+      withinRadius({ lat: q.lat, lng: q.lng }, r.venue, q.radiusKm) &&
+      withinWindow(r.start, q.from, q.to),
   );
 
   // 3. dedup/merge cross-fonte

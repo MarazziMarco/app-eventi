@@ -33,21 +33,27 @@ export default function Home(): React.ReactElement {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<Event | null>(null);
+  const [radiusKm, setRadiusKm] = useState(30);
 
-  const load = useCallback(async (l: Loc) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch(eventsUrl({ lat: l.lat, lng: l.lng, ...(l.city ? { city: l.city } : {}) }));
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      setData((await res.json()) as ApiResponse);
-    } catch (e) {
-      setError((e as Error).message);
-      setData(null);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const load = useCallback(
+    async (l: Loc) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await fetch(
+          eventsUrl({ lat: l.lat, lng: l.lng, radiusKm, ...(l.city ? { city: l.city } : {}) }),
+        );
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        setData((await res.json()) as ApiResponse);
+      } catch (e) {
+        setError((e as Error).message);
+        setData(null);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [radiusKm],
+  );
 
   useEffect(() => {
     void load(loc);
@@ -121,6 +127,25 @@ export default function Home(): React.ReactElement {
           >
             Usa la mia posizione
           </button>
+        </div>
+
+        <div className="mt-2 flex items-center gap-2">
+          <span className="font-mono text-[10px] uppercase tracking-widest text-muted/70">
+            raggio
+          </span>
+          {[30, 50, 100].map((r) => (
+            <button
+              key={r}
+              onClick={() => setRadiusKm(r)}
+              className={`rounded-full border px-3 py-1 font-mono text-xs transition-colors ${
+                radiusKm === r
+                  ? "border-heat-75 text-heat-75"
+                  : "border-white/10 text-muted hover:text-text"
+              }`}
+            >
+              {r}km
+            </button>
+          ))}
         </div>
       </header>
 
