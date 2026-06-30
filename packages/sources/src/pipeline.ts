@@ -1,4 +1,4 @@
-import { rankingConfig, selectionConfig, isFamousVenue } from "@eventi/config";
+import { rankingConfig, selectionConfig, isFamousVenue, nearbyCities } from "@eventi/config";
 import {
   dedupeEvents,
   selectEvents,
@@ -36,31 +36,42 @@ export type PipelineResult = {
  *   -> enrich Spotify -> enrich PredictHQ (stub) -> hypeScore -> filtro adattivo
  */
 export async function runPipeline(query: GeoQuery): Promise<PipelineResult> {
-  // 0. se manca la citta' (es. "usa la mia posizione"), reverse-geocode da
-  // lat/lng: SerpApi/RA cercano per citta', non per coordinate.
-  let q = query;
-  if (!q.cityLabel) {
-    const city = await reverseGeocodeCity(q.lat, q.lng);
-    if (city) q = { ...q, cityLabel: city };
-  }
-
   const sources = getEventSources();
   const failed: string[] = [];
 
-  // 1. fetch parallelo, error-tolerant: una fonte ko non butta giu' le altre
-  const results = await Promise.all(
-    sources.map(async (s) => {
-      try {
-        return await s.fetchEvents(q);
-      } catch (err) {
-        failed.push(s.id);
-        console.warn(`[pipeline] fonte ${s.id} fallita: ${(err as Error).message}`);
-        return [] as RawEvent[];
-      }
-    }),
-  );
+  // interroga TUTTE le fonti per una città, error-tolerant
+  const fetchCity = async (cq: GeoQuery): Promise<RawEvent[]> => {
+    const r = await Promise.all(
+      sources.map(async (s) => {
+        try {
+          return await s.fetchEvents(cq);
+        } catch (err) {
+          failed.push(s.id);
+          console.warn(`[pipeline] fonte ${s.id} (${cq.cityLabel}) fallita: ${(err as Error).message}`);
+          return [] as RawEvent[];
+        }
+      }),
+    );
+    return r.flat();
+  };
 
-  let raws = results.flat();
+  // 0/1. città target:
+  //  - preset (cityLabel fornito): solo quella città.
+  //  - "usa la mia posizione" (no cityLabel): il comune (reverse-geocode) +
+  //    le città dell'elenco entro il raggio scelto. Cosi' il "raggio" significa
+  //    davvero "centri vicini entro X km".
+  let raws: RawEvent[];
+  if (query.cityLabel) {
+    raws = await fetchCity(query);
+  } else {
+    const town = await reverseGeocodeCity(query.lat, query.lng);
+    const near = nearbyCities(query.lat, query.lng, query.radiusKm, 5);
+    const cities = [...new Set([town, ...near].filter((c): c is string => Boolean(c)))];
+    const perCity = await Promise.all(cities.map((c) => fetchCity({ ...query, cityLabel: c })));
+    raws = perCity.flat();
+  }
+
+  const q = query;
 
   // 1b. fixture mock SOLO se esplicitamente richiesto (EVENT_SOURCE_MOCK=1, per
   // demo/dev offline). In produzione NON facciamo fallback automatico: meglio
@@ -97,7 +108,7 @@ export async function runPipeline(query: GeoQuery): Promise<PipelineResult> {
     dedupedCount: deduped.length,
     events: selected,
     sources: usedMock ? ["mock"] : sources.map((s) => s.id),
-    failed,
+    failed: [...new Set(failed)],
     usedMock,
   };
 }
