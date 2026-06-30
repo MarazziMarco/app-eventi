@@ -24,6 +24,7 @@ type SerpEvent = {
   link?: string;
   thumbnail?: string;
   image?: string;
+  description?: string;
   ticket_info?: SerpTicket[];
 };
 type SerpResponse = { events_results?: SerpEvent[] };
@@ -77,6 +78,7 @@ export class GoogleEventsSerpApiSource implements EventSource {
       url: e.link ?? ticketSources[0]?.url ?? "",
       ticketSources,
       ...(e.image || e.thumbnail ? { image: (e.image ?? e.thumbnail)! } : {}),
+      ...(e.description ? { description: e.description } : {}),
       ...(category === "concert" || category === "festival" ? { artist: { name: e.title } } : {}),
     };
   }

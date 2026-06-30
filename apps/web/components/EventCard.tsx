@@ -3,15 +3,33 @@ import { categoryLabel, cleanCity, fmtDate } from "@/lib/format";
 import { heatColorAlpha } from "@/lib/heat";
 import { HeatReadout } from "./HeatReadout";
 
-/** Card del feed: immagine eroe, titolo display, venue/data mono, heat readout. */
-export function EventCard({ event, index }: { event: Event; index: number }): React.ReactElement {
+/** Card del feed: immagine eroe, titolo display, venue/data mono, heat readout.
+ *  Cliccabile: apre il dettaglio (modal). */
+export function EventCard({
+  event,
+  index,
+  onOpen,
+}: {
+  event: Event;
+  index: number;
+  onOpen: (e: Event) => void;
+}): React.ReactElement {
   const glow = heatColorAlpha(event.hypeScore, 0.5);
   return (
     <article
-      className="group flex gap-3 overflow-hidden rounded-2xl border border-white/5 bg-surface transition-colors hover:bg-surface-2 motion-safe:animate-rise"
+      className="group flex w-full cursor-pointer gap-3 overflow-hidden rounded-2xl border border-white/5 bg-surface text-left transition-colors hover:bg-surface-2 motion-safe:animate-rise"
       style={{
         borderLeft: `3px solid ${glow}`,
         animationDelay: `${Math.min(index, 10) * 45}ms`,
+      }}
+      role="button"
+      tabIndex={0}
+      onClick={() => onOpen(event)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onOpen(event);
+        }
       }}
     >
       <div className="relative h-28 w-28 shrink-0 overflow-hidden bg-surface-2 sm:h-32 sm:w-32">
@@ -50,14 +68,9 @@ export function EventCard({ event, index }: { event: Event; index: number }): Re
           )}
         </div>
         {event.ticketSources[0] && (
-          <a
-            className="mt-auto w-fit pt-1 text-sm font-medium text-heat-75 hover:underline"
-            href={event.ticketSources[0].url}
-            target="_blank"
-            rel="noreferrer"
-          >
-            Biglietti → {event.ticketSources[0].name}
-          </a>
+          <span className="mt-auto w-fit pt-1 text-sm font-medium text-heat-75">
+            Dettagli & biglietti →
+          </span>
         )}
       </div>
     </article>

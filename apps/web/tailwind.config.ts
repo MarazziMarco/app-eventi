@@ -33,10 +33,20 @@ const config: Config = {
           from: { opacity: "0", transform: "translateY(12px)" },
           to: { opacity: "1", transform: "translateY(0)" },
         },
+        "fade-in": {
+          from: { opacity: "0" },
+          to: { opacity: "1" },
+        },
+        "modal-in": {
+          from: { opacity: "0", transform: "translateY(8px) scale(0.96)" },
+          to: { opacity: "1", transform: "translateY(0) scale(1)" },
+        },
       },
       animation: {
         "heat-pulse": "heat-pulse 2.4s ease-in-out infinite",
         rise: "rise 0.5s ease-out both",
+        "fade-in": "fade-in 0.2s ease-out both",
+        "modal-in": "modal-in 0.24s cubic-bezier(0.2,0.8,0.2,1) both",
       },
     },
   },

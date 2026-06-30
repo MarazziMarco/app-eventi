@@ -3,15 +3,21 @@ import { categoryLabel, cleanCity, fmtDate } from "@/lib/format";
 import { heatColorAlpha } from "@/lib/heat";
 import { HeatReadout } from "./HeatReadout";
 
-/** Evento piu' caldo: full-bleed image + scrim, titolo display, heat che pulsa. */
-export function Hero({ event }: { event: Event }): React.ReactElement {
+/** Evento piu' caldo: full-bleed image + scrim, titolo display, heat che pulsa.
+ *  Cliccabile: apre il dettaglio (modal). */
+export function Hero({
+  event,
+  onOpen,
+}: {
+  event: Event;
+  onOpen: (e: Event) => void;
+}): React.ReactElement {
   const glow = heatColorAlpha(event.hypeScore, 0.45);
   return (
-    <a
-      href={event.ticketSources[0]?.url ?? event.url}
-      target="_blank"
-      rel="noreferrer"
-      className="group relative block overflow-hidden rounded-3xl border border-white/5"
+    <button
+      type="button"
+      onClick={() => onOpen(event)}
+      className="group relative block w-full overflow-hidden rounded-3xl border border-white/5 text-left"
       style={{ boxShadow: `0 0 60px ${heatColorAlpha(event.hypeScore, 0.18)}` }}
     >
       <div className="relative aspect-[16/10] w-full bg-surface-2 sm:aspect-[16/8]">
@@ -50,6 +56,6 @@ export function Hero({ event }: { event: Event }): React.ReactElement {
         </div>
         <HeatReadout score={event.hypeScore} size="lg" pulse />
       </div>
-    </a>
+    </button>
   );
 }

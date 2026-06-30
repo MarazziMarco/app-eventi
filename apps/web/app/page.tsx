@@ -3,6 +3,7 @@
 import type { Event } from "@eventi/core";
 import { useCallback, useEffect, useState } from "react";
 import { EventCard } from "@/components/EventCard";
+import { EventModal } from "@/components/EventModal";
 import { Hero } from "@/components/Hero";
 import { Logo } from "@/components/Logo";
 import { FeedSkeleton } from "@/components/Skeleton";
@@ -31,6 +32,7 @@ export default function Home(): React.ReactElement {
   const [data, setData] = useState<ApiResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selected, setSelected] = useState<Event | null>(null);
 
   const load = useCallback(async (l: Loc) => {
     setLoading(true);
@@ -135,7 +137,7 @@ export default function Home(): React.ReactElement {
           <p className="py-16 text-center text-muted">Nessun evento in zona per ora.</p>
         ) : (
           <div className="space-y-6">
-            {hero && <Hero event={hero} />}
+            {hero && <Hero event={hero} onOpen={setSelected} />}
 
             <section>
               <div className="flex items-baseline justify-between">
@@ -148,13 +150,15 @@ export default function Home(): React.ReactElement {
               </div>
               <div className="mt-3 space-y-3">
                 {rest.map((e, i) => (
-                  <EventCard key={e.id} event={e} index={i} />
+                  <EventCard key={e.id} event={e} index={i} onOpen={setSelected} />
                 ))}
               </div>
             </section>
           </div>
         )}
       </div>
+
+      {selected && <EventModal event={selected} onClose={() => setSelected(null)} />}
     </main>
   );
 }

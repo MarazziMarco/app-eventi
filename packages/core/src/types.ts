@@ -46,6 +46,7 @@ export type Event = {
   url: string; // miglior link
   ticketSources: TicketSource[];
   image?: string;
+  description?: string;
   artist?: Artist;
   soldOut?: boolean;
   /** 0-100 da PredictHQ se presente */

@@ -49,6 +49,14 @@ function bestImage(raws: RawEvent[]): string | undefined {
   return raws.map((r) => r.image).find((i): i is string => Boolean(i));
 }
 
+function bestDescription(raws: RawEvent[]): string | undefined {
+  // la descrizione piu' lunga (piu' informativa)
+  return raws
+    .map((r) => r.description)
+    .filter((d): d is string => Boolean(d))
+    .sort((a, b) => b.length - a.length)[0];
+}
+
 function bestUrl(raws: RawEvent[]): string {
   return raws.map((r) => r.url).find((u) => Boolean(u)) ?? "";
 }
@@ -99,6 +107,7 @@ function mergeCluster(raws: RawEvent[]): Event {
     url: bestUrl(raws),
     ticketSources: mergeTicketSources(raws.map((r) => r.ticketSources)),
     ...(bestImage(raws) ? { image: bestImage(raws)! } : {}),
+    ...(bestDescription(raws) ? { description: bestDescription(raws)! } : {}),
     ...(artist ? { artist } : {}),
     ...(raws.some((r) => r.soldOut) ? { soldOut: true } : {}),
     ...(typeof externalRank === "number" ? { externalRank } : {}),
