@@ -38,9 +38,10 @@ describe("normalizeRaEvent", () => {
     expect(ev.artist?.name).toBe("Jeff Mills");
   });
 
-  it("evento non ticketato => nessun ticketSource", () => {
+  it("link RA sempre presente come biglietti/info (anche se non ticketato)", () => {
     const ev = normalizeRaEvent({ ...sample, isTicketed: false }, "Milano");
-    expect(ev.ticketSources).toHaveLength(0);
+    expect(ev.ticketSources).toHaveLength(1);
+    expect(ev.ticketSources[0]!.url).toBe("https://ra.co/events/1748293");
   });
 
   it("senza startTime usa la data con default serale", () => {

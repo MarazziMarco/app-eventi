@@ -62,10 +62,10 @@ export async function runPipeline(query: GeoQuery): Promise<PipelineResult> {
 
   let raws = results.flat();
 
-  // 1b. fallback fixture mock: se nessuna fonte reale ha dato eventi (es. zero
-  // chiavi) o se forzato, usiamo dati finti realistici. Mai schermo vuoto/crash.
-  const forceMock = process.env.EVENT_SOURCE_MOCK === "1";
-  const usedMock = forceMock || raws.length === 0;
+  // 1b. fixture mock SOLO se esplicitamente richiesto (EVENT_SOURCE_MOCK=1, per
+  // demo/dev offline). In produzione NON facciamo fallback automatico: meglio
+  // uno schermo "nessun evento" che eventi finti con link morti.
+  const usedMock = process.env.EVENT_SOURCE_MOCK === "1";
   if (usedMock) {
     raws = await new MockSource().fetchEvents(q);
   }

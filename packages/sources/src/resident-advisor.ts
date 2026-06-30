@@ -42,7 +42,8 @@ export function normalizeRaEvent(e: RaEvent, cityLabel: string | undefined): Raw
     },
     ...(city ? { city } : {}),
     url,
-    ticketSources: e.isTicketed ? [{ name: "resident advisor", url }] : [],
+    // sempre il link RA come "biglietti & info" (la pagina evento RA)
+    ticketSources: [{ name: "resident advisor", url }],
     ...(e.flyerFront ? { image: e.flyerFront } : {}),
     ...(headliner ? { artist: { name: headliner } } : {}),
   };

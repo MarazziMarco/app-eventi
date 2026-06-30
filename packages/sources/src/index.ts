@@ -1,5 +1,6 @@
 export * from "./http";
 export * from "./category";
+export * from "./tickets";
 export * from "./ticketmaster";
 export * from "./spotify";
 export * from "./google-events-serpapi";

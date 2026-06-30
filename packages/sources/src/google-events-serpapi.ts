@@ -2,6 +2,7 @@ import { resolveCapacityTier } from "@eventi/config";
 import { cached, type EventSource, type GeoQuery, type RawEvent } from "@eventi/core";
 import { inferCategory } from "./category";
 import { fetchJson } from "./http";
+import { rankTicketSources } from "./tickets";
 
 /**
  * Copertura italiana via SerpApi (engine=google_events).
@@ -64,9 +65,11 @@ export class GoogleEventsSerpApiSource implements EventSource {
     const city = e.address?.[e.address.length - 1] ?? q.cityLabel;
     const start = parseSerpDate(e.date?.start_date) ?? `${q.from}T20:00:00.000Z`;
     const category = inferCategory(e.title);
-    const ticketSources = (e.ticket_info ?? [])
-      .filter((t) => t.link)
-      .map((t) => ({ name: t.source ?? "ticket", url: t.link! }));
+    const ticketSources = rankTicketSources(
+      (e.ticket_info ?? [])
+        .filter((t) => t.link)
+        .map((t) => ({ name: t.source ?? "ticket", url: t.link! })),
+    );
 
     return {
       source: this.id,
@@ -75,7 +78,8 @@ export class GoogleEventsSerpApiSource implements EventSource {
       start,
       venue: { ...(venueName ? { name: venueName } : {}), capacityTier: resolveCapacityTier(venueName) },
       ...(city ? { city } : {}),
-      url: e.link ?? ticketSources[0]?.url ?? "",
+      // preferisci un venditore ufficiale come link principale, non la rivendita
+      url: ticketSources[0]?.url ?? e.link ?? "",
       ticketSources,
       ...(e.image || e.thumbnail ? { image: (e.image ?? e.thumbnail)! } : {}),
       ...(e.description ? { description: e.description } : {}),
