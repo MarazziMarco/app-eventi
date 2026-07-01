@@ -10,9 +10,10 @@ import {
   type RawEvent,
 } from "@eventi/core";
 import { reverseGeocodeCity } from "./geocode";
+import { enrichWithDeezer } from "./deezer";
 import { MockSource } from "./mock-events";
 import { getEventSources } from "./registry";
-import { enrichWithSpotify } from "./spotify";
+import { enrichWithSpotify, isSpotifyConfigured } from "./spotify";
 import { enrichWithPredictHQ } from "./stubs/predicthq";
 
 export type PipelineResult = {
@@ -91,8 +92,12 @@ export async function runPipeline(query: GeoQuery): Promise<PipelineResult> {
   // 3. dedup/merge cross-fonte
   const deduped = dedupeEvents(inScope);
 
-  // 4. arricchimento segnali (Spotify obbligatorio se configurato, PredictHQ stub)
-  const enriched = await enrichWithPredictHQ(await enrichWithSpotify(deduped));
+  // 4. arricchimento popolarità artista: Spotify se configurato (ora richiede
+  // Premium), altrimenti Deezer (gratis, senza chiave). Poi PredictHQ (stub).
+  const withPop = isSpotifyConfigured()
+    ? await enrichWithSpotify(deduped)
+    : await enrichWithDeezer(deduped);
+  const enriched = await enrichWithPredictHQ(withPop);
 
   // 5. hypeScore
   const ranked = enriched.map((e) => withHypeScore(e, rankingConfig));

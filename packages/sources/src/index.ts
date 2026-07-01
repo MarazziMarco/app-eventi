@@ -3,6 +3,7 @@ export * from "./category";
 export * from "./tickets";
 export * from "./ticketmaster";
 export * from "./spotify";
+export * from "./deezer";
 export * from "./google-events-serpapi";
 export * from "./google-events-scraper";
 export * from "./resident-advisor";
