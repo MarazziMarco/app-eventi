@@ -83,7 +83,9 @@ export class GoogleEventsSerpApiSource implements EventSource {
       ticketSources,
       ...(e.image || e.thumbnail ? { image: (e.image ?? e.thumbnail)! } : {}),
       ...(e.description ? { description: e.description } : {}),
-      ...(category === "concert" || category === "festival" ? { artist: { name: e.title } } : {}),
+      // artista-candidato (titolo) tranne per sport/mostre: Deezer poi conferma
+      // popolarita' e permette di ri-classificare "other" in "concert".
+      ...(category !== "sport" && category !== "expo" ? { artist: { name: e.title } } : {}),
     };
   }
 }

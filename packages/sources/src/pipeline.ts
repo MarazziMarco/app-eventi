@@ -97,7 +97,16 @@ export async function runPipeline(query: GeoQuery): Promise<PipelineResult> {
   const withPop = isSpotifyConfigured()
     ? await enrichWithSpotify(deduped)
     : await enrichWithDeezer(deduped);
-  const enriched = await enrichWithPredictHQ(withPop);
+
+  // ri-classifica: se un evento "other" ha un artista con popolarita' alta
+  // (match musicale forte su Deezer), e' un concerto -> corregge la categoria.
+  const reclassified = withPop.map((e) =>
+    e.category === "other" && (e.artist?.spotifyPopularity ?? 0) >= 55
+      ? { ...e, category: "concert" as const }
+      : e,
+  );
+
+  const enriched = await enrichWithPredictHQ(reclassified);
 
   // 5. hypeScore
   const ranked = enriched.map((e) => withHypeScore(e, rankingConfig));
