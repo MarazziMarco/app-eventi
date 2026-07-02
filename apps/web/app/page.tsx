@@ -7,7 +7,10 @@ import { EventModal } from "@/components/EventModal";
 import { Hero } from "@/components/Hero";
 import { Logo } from "@/components/Logo";
 import { FeedSkeleton } from "@/components/Skeleton";
-import { eventsUrl } from "@/lib/api";
+import { cacheKey, eventsUrl } from "@/lib/api";
+import { getCached, setCached } from "@/lib/cache-client";
+import { DATE_RANGE_LABELS, dateRange, type DateRangeKey } from "@/lib/dates";
+import { categoryLabel } from "@/lib/format";
 import { getCurrentPosition } from "@/lib/geo";
 
 type Meta = {
@@ -25,6 +28,9 @@ const PRESETS = {
   roma: { label: "Roma", lat: 41.9028, lng: 12.4964, city: "Roma" },
 } as const;
 
+const DATE_KEYS: DateRangeKey[] = ["weekend", "7", "30", "60"];
+const CACHE_TTL_MS = 6 * 3600 * 1000;
+
 type Loc = { lat: number; lng: number; city?: string; label: string };
 
 export default function Home(): React.ReactElement {
@@ -34,17 +40,39 @@ export default function Home(): React.ReactElement {
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<Event | null>(null);
   const [radiusKm, setRadiusKm] = useState(30);
+  const [dateKey, setDateKey] = useState<DateRangeKey>("60");
+  const [cats, setCats] = useState<Set<string>>(new Set());
 
   const load = useCallback(
     async (l: Loc) => {
+      const { from, to } = dateRange(dateKey);
+      const params = {
+        lat: l.lat,
+        lng: l.lng,
+        radiusKm,
+        from,
+        to,
+        ...(l.city ? { city: l.city } : {}),
+      };
+      const key = cacheKey(params);
+
+      // cache client: riapri app / cambia scheda -> risultati gia' visti, no ricerca
+      const cachedResp = getCached<ApiResponse>(key, CACHE_TTL_MS);
+      if (cachedResp) {
+        setData(cachedResp);
+        setError(null);
+        setLoading(false);
+        return;
+      }
+
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch(
-          eventsUrl({ lat: l.lat, lng: l.lng, radiusKm, ...(l.city ? { city: l.city } : {}) }),
-        );
+        const res = await fetch(eventsUrl(params));
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        setData((await res.json()) as ApiResponse);
+        const json = (await res.json()) as ApiResponse;
+        setData(json);
+        setCached(key, json);
       } catch (e) {
         setError((e as Error).message);
         setData(null);
@@ -52,7 +80,7 @@ export default function Home(): React.ReactElement {
         setLoading(false);
       }
     },
-    [radiusKm],
+    [radiusKm, dateKey],
   );
 
   useEffect(() => {
@@ -80,8 +108,18 @@ export default function Home(): React.ReactElement {
     }
   };
 
-  const events = data?.events ?? [];
-  const [hero, ...rest] = events;
+  const toggleCat = (c: string): void =>
+    setCats((prev) => {
+      const n = new Set(prev);
+      if (n.has(c)) n.delete(c);
+      else n.add(c);
+      return n;
+    });
+
+  const allEvents = data?.events ?? [];
+  const available = [...new Set(allEvents.map((e) => e.category))];
+  const shown = cats.size ? allEvents.filter((e) => cats.has(e.category)) : allEvents;
+  const [hero, ...rest] = shown;
   const dense = Boolean(data && data.meta.finalCount < data.meta.dedupedCount);
   const eyebrow = dense ? "Solo il meglio" : "Tutto quello che c'è in zona";
 
@@ -90,6 +128,11 @@ export default function Home(): React.ReactElement {
       active
         ? "border-heat-75 bg-heat-75 text-ink"
         : "border-white/10 bg-surface text-text hover:bg-surface-2"
+    }`;
+
+  const chip = (active: boolean): string =>
+    `rounded-full border px-3 py-1 font-mono text-xs transition-colors ${
+      active ? "border-heat-75 text-heat-75" : "border-white/10 text-muted hover:text-text"
     }`;
 
   return (
@@ -135,16 +178,28 @@ export default function Home(): React.ReactElement {
               raggio
             </span>
             {[30, 50, 100].map((r) => (
-              <button
-                key={r}
-                onClick={() => setRadiusKm(r)}
-                className={`rounded-full border px-3 py-1 font-mono text-xs transition-colors ${
-                  radiusKm === r
-                    ? "border-heat-75 text-heat-75"
-                    : "border-white/10 text-muted hover:text-text"
-                }`}
-              >
+              <button key={r} onClick={() => setRadiusKm(r)} className={chip(radiusKm === r)}>
                 {r}km
+              </button>
+            ))}
+          </div>
+        )}
+
+        <div className="mt-2 flex items-center gap-2">
+          <span className="font-mono text-[10px] uppercase tracking-widest text-muted/70">quando</span>
+          {DATE_KEYS.map((k) => (
+            <button key={k} onClick={() => setDateKey(k)} className={chip(dateKey === k)}>
+              {DATE_RANGE_LABELS[k]}
+            </button>
+          ))}
+        </div>
+
+        {available.length > 1 && (
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <span className="font-mono text-[10px] uppercase tracking-widest text-muted/70">tipo</span>
+            {available.map((c) => (
+              <button key={c} onClick={() => toggleCat(c)} className={chip(cats.has(c))}>
+                {categoryLabel(c)}
               </button>
             ))}
           </div>
@@ -160,8 +215,8 @@ export default function Home(): React.ReactElement {
 
         {loading ? (
           <FeedSkeleton />
-        ) : events.length === 0 ? (
-          <p className="py-16 text-center text-muted">Nessun evento in zona per ora.</p>
+        ) : shown.length === 0 ? (
+          <p className="py-16 text-center text-muted">Nessun evento con questi filtri.</p>
         ) : (
           <div className="space-y-6">
             {hero && <Hero event={hero} onOpen={setSelected} />}
@@ -171,9 +226,7 @@ export default function Home(): React.ReactElement {
                 <span className="font-mono text-[11px] uppercase tracking-widest text-muted">
                   {eyebrow}
                 </span>
-                <span className="font-mono text-[10px] text-muted/60">
-                  {data?.meta.finalCount ?? 0} eventi
-                </span>
+                <span className="font-mono text-[10px] text-muted/60">{shown.length} eventi</span>
               </div>
               <div className="mt-3 space-y-3">
                 {rest.map((e, i) => (

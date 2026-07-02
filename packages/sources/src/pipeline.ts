@@ -40,10 +40,14 @@ export async function runPipeline(query: GeoQuery): Promise<PipelineResult> {
   const sources = getEventSources();
   const failed: string[] = [];
 
-  // interroga TUTTE le fonti per una città, error-tolerant
-  const fetchCity = async (cq: GeoQuery): Promise<RawEvent[]> => {
+  // SerpApi/scraper costano quota o sono per-città: girano SOLO per la città
+  // principale. Le altre fonti (Resident Advisor gratis, ecc.) girano per tutte.
+  const PRIMARY_ONLY = new Set(["google_events_serpapi", "google_events_scraper"]);
+  const otherSources = sources.filter((s) => !PRIMARY_ONLY.has(s.id));
+
+  const fetchFrom = async (srcs: typeof sources, cq: GeoQuery): Promise<RawEvent[]> => {
     const r = await Promise.all(
-      sources.map(async (s) => {
+      srcs.map(async (s) => {
         try {
           return await s.fetchEvents(cq);
         } catch (err) {
@@ -58,19 +62,26 @@ export async function runPipeline(query: GeoQuery): Promise<PipelineResult> {
 
   // 0/1. città target:
   //  - preset (cityLabel fornito): solo quella città.
-  //  - "usa la mia posizione" (no cityLabel): il comune (reverse-geocode) +
-  //    le città dell'elenco entro il raggio scelto. Cosi' il "raggio" significa
-  //    davvero "centri vicini entro X km".
-  let raws: RawEvent[];
+  //  - "usa la mia posizione" (no cityLabel): comune + città grandi entro raggio.
+  // SerpApi gira SOLO sulla città principale (`serpapiCity`) per risparmiare quota.
+  let cities: string[];
+  let serpapiCity: string | undefined;
   if (query.cityLabel) {
-    raws = await fetchCity(query);
+    cities = [query.cityLabel];
+    serpapiCity = query.cityLabel;
   } else {
     const town = await reverseGeocodeCity(query.lat, query.lng);
     const near = nearbyCities(query.lat, query.lng, query.radiusKm, 5);
-    const cities = [...new Set([town, ...near].filter((c): c is string => Boolean(c)))];
-    const perCity = await Promise.all(cities.map((c) => fetchCity({ ...query, cityLabel: c })));
-    raws = perCity.flat();
+    cities = [...new Set([town, ...near].filter((c): c is string => Boolean(c)))];
+    serpapiCity = near[0] ?? town ?? undefined; // la piu' grande
   }
+
+  const perCity = await Promise.all(
+    cities.map((c) =>
+      fetchFrom(c === serpapiCity ? sources : otherSources, { ...query, cityLabel: c }),
+    ),
+  );
+  let raws = perCity.flat();
 
   const q = query;
 
@@ -111,11 +122,16 @@ export async function runPipeline(query: GeoQuery): Promise<PipelineResult> {
   // 5. hypeScore
   const ranked = enriched.map((e) => withHypeScore(e, rankingConfig));
 
-  // 6. filtro adattivo alla densita'
-  const selected = selectEvents(ranked, {
-    ...selectionConfig,
-    isFamous: isFamousVenue,
-  });
+  // 6. filtro adattivo alla densita'. Finestra corta (es. weekend / 7 giorni)
+  // = soglia piu' permissiva: mostra anche eventi meno importanti, perche' sono
+  // pochi e imminenti.
+  const windowDays =
+    (Date.parse(q.to) - Date.parse(q.from)) / 86_400_000 || 60;
+  const sel =
+    windowDays <= 10
+      ? { ...selectionConfig, minHype: 30, showAllThreshold: 25, topPercent: 0.6 }
+      : selectionConfig;
+  const selected = selectEvents(ranked, { ...sel, isFamous: isFamousVenue });
 
   return {
     rawCount: raws.length,
