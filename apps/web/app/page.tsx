@@ -6,6 +6,7 @@ import { EventCard } from "@/components/EventCard";
 import { EventModal } from "@/components/EventModal";
 import { Hero } from "@/components/Hero";
 import { Logo } from "@/components/Logo";
+import { MapView } from "@/components/MapView";
 import { FeedSkeleton } from "@/components/Skeleton";
 import { cacheKey, eventsUrl } from "@/lib/api";
 import { getCached, setCached } from "@/lib/cache-client";
@@ -42,6 +43,7 @@ export default function Home(): React.ReactElement {
   const [radiusKm, setRadiusKm] = useState(30);
   const [dateKey, setDateKey] = useState<DateRangeKey>("60");
   const [cats, setCats] = useState<Set<string>>(new Set());
+  const [view, setView] = useState<"list" | "map">("list");
 
   const load = useCallback(
     async (l: Loc) => {
@@ -148,7 +150,19 @@ export default function Home(): React.ReactElement {
         <div className="flex items-center gap-2">
           <Logo size={26} />
           <span className="font-display text-lg font-bold tracking-tight">Eventi</span>
-          <span className="ml-auto font-mono text-[11px] text-muted">{loc.label}</span>
+          <div className="ml-auto flex overflow-hidden rounded-full border border-white/10">
+            {(["list", "map"] as const).map((v) => (
+              <button
+                key={v}
+                onClick={() => setView(v)}
+                className={`px-3 py-1 text-xs transition-colors ${
+                  view === v ? "bg-heat-75 text-ink" : "text-muted hover:text-text"
+                }`}
+              >
+                {v === "list" ? "Lista" : "Mappa"}
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className="mt-3 flex flex-wrap gap-2">
@@ -215,6 +229,8 @@ export default function Home(): React.ReactElement {
 
         {loading ? (
           <FeedSkeleton />
+        ) : view === "map" ? (
+          <MapView events={shown} center={{ lat: loc.lat, lng: loc.lng }} onOpen={setSelected} />
         ) : shown.length === 0 ? (
           <p className="py-16 text-center text-muted">Nessun evento con questi filtri.</p>
         ) : (

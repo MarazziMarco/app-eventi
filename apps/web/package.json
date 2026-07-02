@@ -21,6 +21,7 @@
     "@eventi/config": "workspace:*",
     "@eventi/core": "workspace:*",
     "@eventi/sources": "workspace:*",
+    "leaflet": "^1.9.4",
     "next": "^15.1.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
@@ -28,6 +29,7 @@
   "devDependencies": {
     "@capacitor/assets": "^3.0.5",
     "@capacitor/cli": "^8",
+    "@types/leaflet": "^1.9.21",
     "@types/react": "^19.0.2",
     "@types/react-dom": "^19.0.2",
     "autoprefixer": "^10.4.20",
