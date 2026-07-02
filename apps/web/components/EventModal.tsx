@@ -37,7 +37,7 @@ export function EventModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 motion-safe:animate-fade-in"
+      className="fixed inset-0 z-[2000] flex items-center justify-center p-4 motion-safe:animate-fade-in"
       style={{ background: "rgba(0,0,0,0.72)" }}
       onClick={onClose}
       role="dialog"
