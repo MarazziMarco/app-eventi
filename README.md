@@ -1,15 +1,34 @@
-# Eventi migliori vicino a me — Fase 1
+# Eventi — gli eventi più hype vicino a te
 
-Vertical slice per **validare copertura dati + qualita' del ranking** degli eventi
-"hype" vicino a una posizione. Comportamento distintivo: **filtro adattivo alla
-densita'** — zone piene (Roma) mostrano solo il top, zone vuote (Viterbo) mostrano
-tutto. NON e' ancora l'app nativa (niente Capacitor/push/Supabase: solo cuciture pulite).
+App che mostra gli eventi più "hype" vicino alla tua posizione: concerti grossi,
+festival, sport, nightlife. Comportamento distintivo: **filtro adattivo alla
+densità** — zone piene (Roma) mostrano solo il top, zone vuote (Viterbo) mostrano
+tutto. Web (PWA) + app nativa iOS/Android via Capacitor. **Budget zero.**
+
+🔗 **Live:** https://eventi-livid.vercel.app
+
+## Screenshot
+
+| Lista | Dettaglio | Mappa |
+|---|---|---|
+| ![Lista](docs/screenshots/01-lista.png) | ![Dettaglio](docs/screenshots/02-dettaglio.png) | ![Mappa](docs/screenshots/03-mappa.png) |
+
+## Cosa fa
+
+- **Filtro adattivo alla densità**: Roma taglia ai top, Viterbo mostra tutto.
+- **Multi-fonte gratis**: SerpApi (Google Eventi → concerti/festival/sport), Resident Advisor (nightlife), Deezer (popolarità artisti). Ogni fonte è un adapter pluggabile; se una fallisce, le altre continuano.
+- **Ranking "Heat"** (hypeScore 0-100): capienza venue + popolarità artista + categoria + domanda. Guida ordine + filtro.
+- **Posizione live** + **raggio = città grandi entro X km** (reverse-geocoding Nominatim).
+- **Filtri** data (weekend/7/30/60gg) e categoria.
+- **Dettaglio evento** (modal): data/ora, luogo → mappa, descrizione, biglietti (ordinati: ufficiali prima), mini-mappa.
+- **Vista mappa** con pin colorati per hype + etichette.
+- **Cache client** (riapri → istantaneo) + **quota SerpApi ottimizzata** (1 ricerca sulla città grande).
 
 ## Vincolo: budget zero
 
 Gira **senza spendere** e senza carta:
 
-- **Ticketmaster Discovery** (~5000 call/giorno) + **Spotify Web API** (segnale ranking) = base gratis ufficiale.
+- **Ticketmaster Discovery** (~5000 call/giorno, opzionale) + **Deezer** (segnale popolarità artista, gratis senza chiave; Spotify richiede ormai Premium).
 - Copertura italiana: **girano insieme tutte le fonti configurate** (il dedup le fonde). SerpApi (free ~100–250 ricerche/mese → cache 1×/giorno) + scraper Playwright. `EVENT_SOURCE_IT` forza una sola fonte IT (debug).
 - **Resident Advisor** (nightlife club/elettronica): gratis, nessuna chiave, attivo di default. Copre i club di tendenza nelle grandi città; non le discoteche commerciali solo-social.
 
