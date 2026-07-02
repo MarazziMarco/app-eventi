@@ -17,3 +17,5 @@ out/
 
 # capacitor build stash (temporary during static export; never commit)
 .api-stash
+.vercel
+.env*
