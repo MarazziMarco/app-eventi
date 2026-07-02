@@ -5,6 +5,7 @@ import { useEffect } from "react";
 import { categoryLabel, cleanCity, fmtDate, fmtTime, mapUrl } from "@/lib/format";
 import { heatColorAlpha } from "@/lib/heat";
 import { HeatReadout } from "./HeatReadout";
+import { MiniMap } from "./MiniMap";
 
 /**
  * Dettaglio evento in modal centrale animato. Mostra immagine, data/ora,
@@ -98,6 +99,16 @@ export function EventModal({
               </a>
             )}
           </div>
+
+          {event.venue.lat !== undefined && event.venue.lng !== undefined && (
+            <MiniMap
+              lat={event.venue.lat}
+              lng={event.venue.lng}
+              {...(event.venue.name ? { venueName: event.venue.name } : {})}
+              {...(event.city ? { city: event.city } : {})}
+              hypeScore={event.hypeScore}
+            />
+          )}
 
           {event.description && (
             <p className="text-sm leading-relaxed text-muted">{event.description}</p>

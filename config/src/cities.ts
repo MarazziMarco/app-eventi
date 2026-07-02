@@ -36,6 +36,49 @@ export const IT_CITIES: CityPoint[] = [
   { name: "Viterbo", lat: 42.4207, lng: 12.1077, weight: 36 },
 ];
 
+function normalizeCityStr(s: string): string {
+  return s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .trim();
+}
+
+// nomi inglesi -> italiani (Google/SerpApi spesso ritorna in inglese)
+const CITY_ALIASES: Record<string, string> = {
+  rome: "Roma",
+  milan: "Milano",
+  naples: "Napoli",
+  turin: "Torino",
+  florence: "Firenze",
+  venice: "Venezia",
+  genoa: "Genova",
+};
+
+/**
+ * Coordinate approssimate (centro città) da una stringa città tipo
+ * "Fabrica di Roma, Province of Viterbo, Italy" o "Rome". Preferisce la
+ * PROVINCIA (più affidabile: es. "Fabrica di Roma" è provincia di Viterbo).
+ * Fallback per posizionare sulla mappa gli eventi senza coordinate del venue.
+ */
+export function cityCoords(cityStr: string | undefined): CityPoint | undefined {
+  if (!cityStr) return undefined;
+  const n = normalizeCityStr(cityStr);
+  const prov = n.match(/province of ([a-z ]+)/)?.[1]?.trim();
+  const town = n.split(",")[0]!.trim();
+
+  for (const cand of [prov, town].filter((c): c is string => Boolean(c))) {
+    const match =
+      IT_CITIES.find((c) => normalizeCityStr(c.name) === cand) ??
+      IT_CITIES.find((c) => cand.includes(normalizeCityStr(c.name))) ??
+      (CITY_ALIASES[cand]
+        ? IT_CITIES.find((c) => c.name === CITY_ALIASES[cand])
+        : undefined);
+    if (match) return match;
+  }
+  return undefined;
+}
+
 /**
  * Le città PIÙ GRANDI entro `radiusKm` dal punto (max `max`).
  * Usato per "la mia posizione": il raggio diventa "i centri principali entro

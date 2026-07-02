@@ -1,4 +1,10 @@
-import { rankingConfig, selectionConfig, isFamousVenue, nearbyCities } from "@eventi/config";
+import {
+  rankingConfig,
+  selectionConfig,
+  isFamousVenue,
+  nearbyCities,
+  cityCoords,
+} from "@eventi/config";
 import {
   dedupeEvents,
   selectEvents,
@@ -36,6 +42,15 @@ export type PipelineResult = {
  *   fonti (parallele, error-tolerant) -> filtro geo/finestra -> dedup
  *   -> enrich Spotify -> enrich PredictHQ (stub) -> hypeScore -> filtro adattivo
  */
+/** Dispersione deterministica (~±1.5km) da un id, per non impilare i pin. */
+function jitter(id: string): { dlat: number; dlng: number } {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
+  const a = (h % 1000) / 1000 - 0.5;
+  const b = ((Math.floor(h / 1000) % 1000) / 1000) - 0.5;
+  return { dlat: a * 0.03, dlng: b * 0.03 };
+}
+
 export async function runPipeline(query: GeoQuery): Promise<PipelineResult> {
   const sources = getEventSources();
   const failed: string[] = [];
@@ -133,10 +148,20 @@ export async function runPipeline(query: GeoQuery): Promise<PipelineResult> {
       : selectionConfig;
   const selected = selectEvents(ranked, { ...sel, isFamous: isFamousVenue });
 
+  // 7. coordinate per la MAPPA: se il venue non ha lat/lng, usa il centro della
+  // città dell'evento + una piccola dispersione deterministica (per non
+  // sovrapporre i pin). Cosi' TUTTI gli eventi compaiono sulla mappa, subito.
+  const withMapCoords = selected.map((e) => {
+    if (e.venue.lat !== undefined && e.venue.lng !== undefined) return e;
+    const base = cityCoords(e.city) ?? { lat: q.lat, lng: q.lng };
+    const j = jitter(e.id);
+    return { ...e, venue: { ...e.venue, lat: base.lat + j.dlat, lng: base.lng + j.dlng } };
+  });
+
   return {
     rawCount: raws.length,
     dedupedCount: deduped.length,
-    events: selected,
+    events: withMapCoords,
     sources: usedMock ? ["mock"] : sources.map((s) => s.id),
     failed: [...new Set(failed)],
     usedMock,
